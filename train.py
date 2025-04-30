@@ -1,3 +1,7 @@
+'''
+TODO:
+# Replace the logic to load data and extract features 
+'''
 import time
 import random
 import argparse
