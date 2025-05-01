@@ -9,7 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from utils.env import launch_env
 from utils.wrappers import *
-from utils.teacher import PurePursuitExpert
+# from utils.teacher import PurePursuitExpert
+from utils.pure_pursuit_policy import PurePursuitPolicy
 import cv2
 import os
 
@@ -27,8 +28,9 @@ def _train(args):
     observation_shape = (None,) + env.observation_space.shape
     action_shape = (None,) + env.action_space.shape
 
-    expert = PurePursuitExpert(env=env)
-    # expert = PurePursuitPolicy(env=env, ref_velocity=0.7)
+    # expert = PurePursuitExpert(env=env)
+    max_velocity = 0.7
+    expert = PurePursuitPolicy(env=env, ref_velocity=max_velocity)
     observations = []
     actions = []
 
