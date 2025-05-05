@@ -19,7 +19,6 @@ def _train(args):
     env = GymCompatibilityWrapper(env)
     env = ResizeWrapper(env)
     env = NormalizeWrapper(env)
-    env = ImgWrapper(env)
     env = ActionWrapper(env)
     print("Initialized Wrappers")
     env.reset()
@@ -77,13 +76,8 @@ def create_expert_video(observations, actions, filename="expert_demonstration.mp
     print("Creating expert demonstration video...")
     
     # Get image dimensions and prepare video writer
-    if len(observations.shape) == 4:  # (frames, channels, height, width)
-        frame_count, channels, height, width = observations.shape
-        # Convert from channel-first (PyTorch format) to channel-last (OpenCV format)
-        sample_frame = np.transpose(observations[0], (1, 2, 0))
-    else:
-        frame_count, height, width, channels = observations.shape
-        sample_frame = observations[0]
+    frame_count, height, width, channels = observations.shape
+    sample_frame = observations[0]
     
     # Define the codec and create VideoWriter object
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # or 'XVID'
@@ -92,10 +86,7 @@ def create_expert_video(observations, actions, filename="expert_demonstration.mp
     # Write each frame to video with action information overlay
     for i in range(len(observations)):
         # Get and prepare the frame
-        if len(observations.shape) == 4 and observations.shape[1] <= 3:  # Channel-first format
-            frame = np.transpose(observations[i], (1, 2, 0))
-        else:
-            frame = observations[i]
+        frame = observations[i]
         
         # Convert to BGR if it's RGB
         if frame.dtype == np.float32 or frame.dtype == np.float64:
