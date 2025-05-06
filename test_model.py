@@ -5,15 +5,20 @@ import numpy as np
 from utils.env import launch_env
 from utils.wrappers import *
 import cv2
+from ncps.tf import LTC
+from ncps.wirings import AutoNCP
+from train import create_imitation_ncp, create_imitation_cnn_with_ic
 import os
 
 def _enjoy():
-    try:
-        model = load_model("imitation_cnn.keras")
-        print("Model loaded successfully")
-    except Exception as e:
-        print(f"Failed to load model: {e}")
-        exit()
+    # model = create_imitation_ncp()
+    #load weights
+    # model.load_weights("imitation_cnn_ncp.h5")
+    model = create_imitation_cnn_with_ic()
+    model.load_weights("imitation_cnn_ic.h5")
+    model.trainable = False
+    for layer in model.layers:
+        layer.trainable = False
 
     env = launch_env()
     env = GymCompatibilityWrapper(env)
@@ -25,13 +30,15 @@ def _enjoy():
     observations = []
     actions = []
     
-    for steps in range(0, 200):
+    for steps in range(0, 400):
         # Process the observation for the model
         obs_tensor = np.expand_dims(obs, axis=0)
         
         # Get the action from the model
-        action = model.predict(obs_tensor, verbose=1)[0]
-        print(action)
+        action = np.array([0.0, 0.0])
+        action_raw = model.predict(obs_tensor, verbose=1)[0]
+        action[0] = action_raw[0]
+        action[1] = action_raw[1]
         # Apply the action to the environment
         obs, reward, terminated, truncated, info = env.step(action)
         done = terminated or truncated
@@ -49,8 +56,8 @@ def _enjoy():
 
     create_expert_video(np.array(observations), np.array(actions))
     env.close()
-    
-def create_expert_video(observations, actions, filename="test_run.mp4"):
+
+def create_expert_video(observations, actions, filename="test_run_ncp.mp4"):
     """Create a video from the collected observations with action overlay."""
     print("Creating expert demonstration video...")
     
