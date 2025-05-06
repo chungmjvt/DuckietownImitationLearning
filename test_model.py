@@ -9,13 +9,13 @@ from ncps.tf import LTC
 from ncps.wirings import AutoNCP
 from train import create_imitation_ncp, create_imitation_cnn_with_ic
 import os
+from utils.pure_pursuit_policy import PurePursuitPolicy
 
 def _enjoy():
-    # model = create_imitation_ncp()
-    #load weights
-    # model.load_weights("imitation_cnn_ncp.h5")
-    model = create_imitation_cnn_with_ic()
-    model.load_weights("imitation_cnn_ic.h5")
+    model = create_imitation_ncp()
+    model.load_weights("imitation_cnn_ncp.h5")
+    # model = create_imitation_cnn_with_ic()
+    # model.load_weights("imitation_cnn_ic.h5")
     model.trainable = False
     for layer in model.layers:
         layer.trainable = False
@@ -29,8 +29,10 @@ def _enjoy():
     obs, _ = env.reset()
     observations = []
     actions = []
+    max_velocity = 0.8
+    # expert = PurePursuitPolicy(env=env, ref_velocity=max_velocity)
     
-    for steps in range(0, 400):
+    for steps in range(0, 500):
         # Process the observation for the model
         obs_tensor = np.expand_dims(obs, axis=0)
         
@@ -39,7 +41,10 @@ def _enjoy():
         action_raw = model.predict(obs_tensor, verbose=1)[0]
         action[0] = action_raw[0]
         action[1] = action_raw[1]
-        # Apply the action to the environment
+
+        # Uncomment the following line to use the PurePursuitPolicy instead        
+        # action = expert.predict(None)
+
         obs, reward, terminated, truncated, info = env.step(action)
         done = terminated or truncated
         observations.append(obs)
