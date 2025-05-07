@@ -6,7 +6,7 @@ import os
 import argparse
 
 # Import models from train.py
-from train import create_imitation_cnn_with_ic, create_imitation_ncp
+from train import create_imitation_cnn_with_ic, create_imitation_ncp, create_imitation_ct_rnn
 
 # Load expert data
 def load_expert_data(filename="imitation_data.npz"):
@@ -27,9 +27,12 @@ if __name__ == "__main__":
     if args.model == 'cnn':
         model = create_imitation_cnn_with_ic()
         weight_file = 'imitation_cnn_weights.h5'
-    else:
+    elif args.model == 'ncp':
         model = create_imitation_ncp()
         weight_file = 'imitation_ncp_weights.h5'
+    elif args.model == 'ctrnn':
+        model = create_imitation_ct_rnn()
+        weight_file = 'imitation_ct_rnn_weights.h5'
 
     # Load weights
     if not os.path.exists(weight_file):
@@ -70,4 +73,6 @@ if __name__ == "__main__":
     plt.show()
 
 # to run: python evaluate_model.py --model cnn
-# or python evaluate_model.py --model ncp
+# python evaluate_model.py --model ncp
+# python evaluate_model.py --model ctrnn
+
