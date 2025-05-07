@@ -18,7 +18,7 @@ def load_expert_data(filename="imitation_data.npz"):
 # Main
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, choices=['cnn', 'ncp'], default='cnn', help="Model type: 'cnn' or 'ncp'")
+    parser.add_argument('--model', type=str, choices=['cnn', 'ncp','ctrnn'], default='cnn', help="Model type: 'cnn' or 'ncp' or 'ctrnn'")
     args = parser.parse_args()
 
     observations, actions = load_expert_data()
