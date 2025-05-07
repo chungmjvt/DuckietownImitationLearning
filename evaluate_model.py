@@ -1,10 +1,12 @@
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense, BatchNormalization, SpatialDropout2D
 from sklearn.metrics import mean_absolute_error, r2_score
 import matplotlib.pyplot as plt
 import os
+import argparse
+
+# Import models from train.py
+from train import create_imitation_cnn_with_ic, create_imitation_ncp
 
 # Load expert data
 def load_expert_data(filename="imitation_data.npz"):
@@ -13,49 +15,29 @@ def load_expert_data(filename="imitation_data.npz"):
     data = np.load(f"data/{filename}")
     return data['observations'], data['actions']
 
-# Define the same architecture used during training
-def create_model(input_shape):
-    model = Sequential([
-        Conv2D(2, kernel_size=5, strides=1, activation='relu', padding='same', input_shape=input_shape),
-        BatchNormalization(),
-        SpatialDropout2D(0.01),
-        MaxPooling2D(pool_size=2, strides=2),
-
-        Conv2D(12, kernel_size=5, strides=1, activation='relu', padding='same'),
-        BatchNormalization(),
-        SpatialDropout2D(0.05),
-        MaxPooling2D(pool_size=2, strides=2),
-
-        Conv2D(24, kernel_size=5, strides=1, activation='relu', padding='same'),
-        BatchNormalization(),
-        SpatialDropout2D(0.05),
-        MaxPooling2D(pool_size=2, strides=2),
-
-        Conv2D(36, kernel_size=5, strides=1, activation='relu', padding='same'),
-        BatchNormalization(),
-        SpatialDropout2D(0.05),
-        MaxPooling2D(pool_size=2, strides=2),
-
-        Conv2D(48, kernel_size=5, strides=1, activation='relu', padding='same'),
-        BatchNormalization(),
-        SpatialDropout2D(0.05),
-        MaxPooling2D(pool_size=2, strides=2),
-
-        Flatten(),
-        Dense(16, activation='relu'),
-        BatchNormalization(),
-        Dropout(0.05),
-        Dense(2)
-    ])
-    model.compile(optimizer='adam', loss='mse')
-    return model
-
 # Main
 if __name__ == "__main__":
-    observations, actions = load_expert_data()
-    model = create_model(input_shape=(observations.shape[1], observations.shape[2], observations.shape[3]))
-    model.load_weights("imitation_cnn_ic.h5")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model', type=str, choices=['cnn', 'ncp'], default='cnn', help="Model type: 'cnn' or 'ncp'")
+    args = parser.parse_args()
 
+    observations, actions = load_expert_data()
+
+    # Select and create model
+    if args.model == 'cnn':
+        model = create_imitation_cnn_with_ic()
+        weight_file = 'imitation_cnn_weights.h5'
+    else:
+        model = create_imitation_ncp()
+        weight_file = 'imitation_ncp_weights.h5'
+
+    # Load weights
+    if not os.path.exists(weight_file):
+        raise FileNotFoundError(f"Weight file {weight_file} not found. Please train and save the model first.")
+    model.load_weights(weight_file)
+    print(f"Loaded weights from '{weight_file}'")
+
+    # Predict
     predictions = model.predict(observations)
 
     # Metrics
@@ -65,12 +47,12 @@ if __name__ == "__main__":
     print(f"R^2 Score: {r2:.4f}")
 
     # Separate component errors
-    steering_mae = mean_absolute_error(actions[:,0], predictions[:,0])
-    speed_mae = mean_absolute_error(actions[:,1], predictions[:,1])
+    steering_mae = mean_absolute_error(actions[:, 0], predictions[:, 0])
+    speed_mae = mean_absolute_error(actions[:, 1], predictions[:, 1])
     print(f"Steering MAE: {steering_mae:.4f}")
     print(f"Speed MAE: {speed_mae:.4f}")
 
-    # Plot
+    # Plot results
     plt.figure(figsize=(10, 4))
     plt.subplot(1, 2, 1)
     plt.plot(actions[:, 0], label='True Steering')
@@ -86,3 +68,6 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.show()
+
+# to run: python evaluate_model.py --model cnn
+# or python evaluate_model.py --model ncp
